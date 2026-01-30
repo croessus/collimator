@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access iPhone Camera</title>
+</head>
+<body>
+    <h1>Access iPhone Camera</h1>
+    
+    <!-- Video element to show camera feed -->
+    <video id="video" width="100%" height="auto" autoplay></video>
+
+    <script>
+        // Function to start video stream
+        async function startCamera() {
+            try {
+                // Request access to the user's camera
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+                // Get the video element
+                const videoElement = document.getElementById('video');
+
+                // Set the video element's source to the media stream
+                videoElement.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                alert("Failed to access camera. Please make sure you have granted camera permissions.");
+            }
+        }
+
+        // Call the function to start the camera when the page loads
+        window.onload = startCamera;
+    </script>
+</body>
+</html>
