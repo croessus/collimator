@@ -2,35 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access iPhone Camera</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iPhone Camera Overlay</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: black; color: white; font-family: sans-serif; }
+        
+        #container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        
+        /* Camera Stream */
+        #camera-feed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+        
+        /* Overlay Container */
+        #overlay { position: absolute; z-index: 2; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; }
+        
+        /* Concentric Circles */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            border: 4px solid;
+            transition: width 0.1s, height 0.1s;
+        }
+        #c1 { border-color: red; width: 300px; height: 300px; }
+        #c2 { border-color: green; width: 200px; height: 200px; }
+        #c3 { border-color: yellow; width: 100px; height: 100px; }
+        
+        /* Controls */
+        #controls {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            z-index: 3; display: flex; flex-direction: column; align-items: center;
+            background: rgba(0,0,0,0.5); padding: 10px 0;
+        }
+        input[type=range] { width: 80%; }
+        label { margin-bottom: 5px; }
+    </style>
 </head>
 <body>
-    <h1>Access iPhone Camera</h1>
-    
-    <!-- Video element to show camera feed -->
-    <video id="video" width="100%" height="auto" autoplay></video>
+
+    <div id="container">
+        <video id="camera-feed" autoplay playsinline></video>
+        
+        <div id="overlay">
+            <div class="circle" id="c1"></div>
+            <div class="circle" id="c2"></div>
+            <div class="circle" id="c3"></div>
+        </div>
+
+        <div id="controls">
+            <label for="opacity">Opacity</label>
+            <input type="range" id="opacity" min="0" max="1" step="0.1" value="0.8">
+            <label for="size">Size</label>
+            <input type="range" id="size" min="50" max="400" step="10" value="200">
+        </div>
+    </div>
 
     <script>
-        // Function to start video stream
-        async function startCamera() {
+        const video = document.getElementById('camera-feed');
+        const overlay = document.getElementById('overlay');
+        const circles = document.querySelectorAll('.circle');
+        const opacitySlider = document.getElementById('opacity');
+        const sizeSlider = document.getElementById('size');
+
+        // Access Camera
+        async function initCamera() {
             try {
-                // Request access to the user's camera
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-                // Get the video element
-                const videoElement = document.getElementById('video');
-
-                // Set the video element's source to the media stream
-                videoElement.srcObject = stream;
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' } // Use rear camera
+                });
+                video.srcObject = stream;
             } catch (err) {
                 console.error("Error accessing camera: ", err);
-                alert("Failed to access camera. Please make sure you have granted camera permissions.");
+                alert("Could not access camera. Ensure HTTPS.");
             }
         }
 
-        // Call the function to start the camera when the page loads
-        window.onload = startCamera;
+        // Opacity Control
+        opacitySlider.addEventListener('input', (e) => {
+            overlay.style.opacity = e.target.value;
+        });
+
+        // Resize Control
+        sizeSlider.addEventListener('input', (e) => {
+            const baseSize = parseInt(e.target.value);
+            document.getElementById('c1').style.width = `${baseSize}px`;
+            document.getElementById('c1').style.height = `${baseSize}px`;
+            document.getElementById('c2').style.width = `${baseSize * 0.66}px`;
+            document.getElementById('c2').style.height = `${baseSize * 0.66}px`;
+            document.getElementById('c3').style.width = `${baseSize * 0.33}px`;
+            document.getElementById('c3').style.height = `${baseSize * 0.33}px`;
+        });
+
+        initCamera();
     </script>
 </body>
 </html>
