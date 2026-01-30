@@ -57,7 +57,7 @@
             max-width: 400px;
         }
         .control-group { margin-top: 5px; display: flex; align-items: center; justify-content: space-between; }
-        .control-group label { font-size: 12px; width: 60px; text-align: right; }
+        .control-group label { font-size: 12px; width: 45px; text-align: right; }
         .control-group input[type=range] { flex-grow: 1; margin: 0 5px; }
 
         #startBtn {
@@ -80,26 +80,30 @@
     <div id="controls">
         <button id="startBtn">Start Camera</button>
         <div class="control-group">
-            <label>R:</label>
-            <input type="range" id="size1" min="1" max="500" value="200">
+	    <label>Red</label>
+            <label id="lc1" for="size1">200</label>
+            <input type="range" id="size1" min="1" max="1000" value="200">
             <label>Opacity</label>
             <input type="range" id="op1" min="0" max="1" step="0.1" value="1">
         </div>
         <div class="control-group">
-            <label>G:</label>
-            <input type="range" id="size2" min="1" max="500" value="150">
+	    <label>Green</label>
+            <label id="lc2" for="size2">150</label>
+            <input type="range" id="size2" min="1" max="1000" value="150">
             <label>Opacity</label>
             <input type="range" id="op2" min="0" max="1" step="0.1" value="1">
         </div>
         <div class="control-group">
-            <label>B:</label>
-            <input type="range" id="size3" min="1" max="500" value="100">
+            <label>Blue</label>
+	    <label id="lc3" for="size3">100</label>
+            <input type="range" id="size3" min="1" max="1000" value="100">
             <label>Opacity</label>
             <input type="range" id="op3" min="0" max="1" step="0.1" value="1">
         </div> 
         <div class="control-group">
-            <label>Y:</label>
-            <input type="range" id="size4" min="1" max="500" value="1">
+            <label>Yellow</label>
+	    <label id="lc4" for="size4">1</label>
+            <input type="range" id="size4" min="1" max="1000" value="1">
             <label>Opacity</label>
             <input type="range" id="op4" min="0" max="1" step="0.1" value="1">
         </div> 
@@ -112,6 +116,7 @@
     
     // Elements
     const circles = [document.getElementById('c1'), document.getElementById('c2'), document.getElementById('c3'), document.getElementById('c4')];
+    const labels = [document.getElementById('lc1'), document.getElementById('lc2'), document.getElementById('lc3'), document.getElementById('lc4')];
     const sizeSliders = [document.getElementById('size1'), document.getElementById('size2'), document.getElementById('size3'), document.getElementById('size4')];
     const opSliders = [document.getElementById('op1'), document.getElementById('op2'), document.getElementById('op3'), document.getElementById('op4')];
 
@@ -129,10 +134,12 @@
     function updateOverlays() {
         circles.forEach((circle, i) => {
             const size = sizeSliders[i].value + 'px';
+	    const lsize = sizeSliders[i].value;
             const opacity = opSliders[i].value;
             circle.style.width = size;
             circle.style.height = size;
             circle.style.opacity = opacity;
+            labels[i].innerHTML = '(' + lsize + ')';
         });
     }
 
