@@ -53,8 +53,8 @@
             border-radius: 10px;
             pointer-events: auto; /* Re-enable pointer events for inputs */
             text-align: center;
-            width: 100%;
-            max-width: 400px;
+            width: 95%;
+            /* max-width: 400px; */
         }
         .control-group { margin-top: 5px; display: flex; align-items: center; justify-content: space-between; }
         .control-group label { font-size: 12px; width: 45px; text-align: right; }
@@ -131,14 +131,14 @@
     });
 
 	function updateNums() {
-		nums.forEach((num, i) => {
+		nums.forEach(i => {
 			nums[i].value = sizes[i].value;
         });
 		updateOverlay();
 	}
 	
 	function updateSizes() {
-		sizes.forEach((size, i) => {
+		sizes.forEach(i => {
 			sizes[i].value = nums[i].value;
         });
 		updateOverlay();
