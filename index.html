@@ -1,177 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Collimator</title>
-    <style>
-        html, body { margin: 0; padding: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
-        
-        #app { position: fixed; width: 100vw; height: 100vh; overflow: hidden; }
-        
-        /* Camera Preview */
-        #camera {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Crucial for full screen */
-            position: absolute;
-            top: 0; left: 0;
-			overflow: hidden;
-        }
-
-        /* Overlay Container */
-        #overlay-container {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            pointer-events: none; /* Allows clicks to pass through to controls */
-            overflow: hidden;
-        }
-
-        /* Concentric Circles */
-        .circle {
-            position: absolute;
-            border: 2px solid;
-            border-radius: 50%;
-            transition: all 0.1s ease;
-            pointer-events: none;
-            overflow: hidden;
-        }
-        #c1 { border-color: red; width: 200px; height: 200px; }
-        #c2 { border-color: green; width: 150px; height: 150px; }
-        #c3 { border-color: blue; width: 100px; height: 100px; }
-        #c4 { border-color: yellow; width: 15px; height: 15px; }
-
-        /* Controls Panel */
-        #controls {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 10px;
-            pointer-events: auto; /* Re-enable pointer events for inputs */
-            text-align: center;
-            width: 100%;
-            max-width: 390px;
-            overflow: hidden;
-        }
-        .control-group { margin-top: 5px; display: flex; align-items: center; justify-content: space-between; }
-        .control-group label { font-size: 12px; width: 45px; text-align: right; }
-        .control-group input[type=range] { flex-grow: 1; margin: 0 5px; }
-
-        #startBtn {
-            padding: 10px 20px; font-size: 16px; margin-top: 10px;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Collimator</title>
+<style>
+:root{--bg:#14171a;--panel:rgba(20,23,26,.88);--ink:#f2f4f5;--muted:#9aa4ab;--line:#2e353a;--accent:#f2f4f5;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171a}}
+:root[data-theme="dark"]{--bg:#14171a}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0;overflow:hidden;background:#0b0d0e}
+video{position:absolute;left:50%;top:50%;min-width:100%;min-height:100%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);display:none}
+.ring{position:absolute;left:50%;top:50%;border-radius:50%;border-style:solid;border-width:4px;transform:translate(-50%,-50%);pointer-events:none}
+#hint{position:absolute;left:50%;top:38%;transform:translateX(-50%);text-align:center;color:var(--muted);font-size:14px;max-width:80%;pointer-events:none}
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
+#panel{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 14px;max-height:46dvh;overflow-y:auto;max-width:720px;margin:0 auto}
+#panel.hidden{display:none}
+.top{display:flex;gap:8px;justify-content:center;padding:8px;max-width:720px;margin:0 auto}
+button{font:inherit;font-weight:600;color:#111;background:var(--accent);border:0;border-radius:999px;padding:10px 18px;cursor:pointer}
+button.alt{background:transparent;color:var(--ink);border:1px solid var(--line);background:var(--panel)}
+.row{display:grid;grid-template-columns:14px 1fr;gap:4px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.dot{width:14px;height:14px;border-radius:50%}
+.ctl{display:grid;grid-template-columns:62px 1fr 74px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.ctl+.ctl{margin-top:4px}
+.row .dot{grid-row:span 2}
+input[type=range]{width:100%;min-width:0;accent-color:var(--c)}
+input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px;font:inherit;font-size:14px}
+</style>
 </head>
 <body>
-
-<div id="app">
-    <video id="camera" autoplay playsinline muted></video>
-    
-    <div id="overlay-container">
-        <div id="c1" class="circle"></div>
-        <div id="c2" class="circle"></div>
-        <div id="c3" class="circle"></div>
-        <div id="c4" class="circle"></div>
-    </div>
-
-    <div id="controls">
-        <button id="startBtn">Start Camera</button>
-        <div class="control-group">
-	    <label>R:</label>&nbsp
-            <input type="number" id="num1" min="0" max="1000" step="1" value="200">
-			<input type="range" id="size1" min="0" max="1000" step="5" value="200">
-            <label>Haze</label>
-            <input type="range" id="op1" min="0" max="1" step="0.1" value="0.8">
-        </div>
-        <div class="control-group">
-	    <label>G:</label>&nbsp
-            <input type="number" id="num2" min="0" max="1000" step="1" value="150">
-			<input type="range" id="size2" min="0" max="1000" step="5" value="150">
-            <label>Haze</label>
-            <input type="range" id="op2" min="0" max="1" step="0.1" value="0.8">
-        </div>
-        <div class="control-group">
-            <label>B:</label>&nbsp
-            <input type="number" id="num3" min="0" max="1000" step="1" value="100">
-			<input type="range" id="size3" min="0" max="1000" step="5" value="100">
-            <label>Haze</label>
-            <input type="range" id="op3" min="0" max="1" step="0.1" value="0.8">
-        </div> 
-        <div class="control-group">
-        <label>Y:</label>&nbsp
-	        <input type="number" id="num4" min="0" max="1000" step="1" value="15">
-			<input type="range" id="size4" min="0" max="1000" step="5" value="15">
-            <label>Haze</label>
-            <input type="range" id="op4" min="0" max="1" step="0.1" value="0.8">
-        </div> 
-    </div>
+<div id="stage">
+  <video id="v" autoplay playsinline muted></video>
+  <div id="hint">Tap “Start camera” to begin.<br>The rings stay centered on your screen in any orientation.</div>
 </div>
-
+<div id="bar">
+  <div class="top">
+    <button id="cam">Start camera</button>
+    <button id="tog" class="alt">Hide controls</button>
+  </div>
+  <div id="panel"></div>
+</div>
 <script>
-    const video = document.getElementById('camera');
-    const startBtn = document.getElementById('startBtn');
-    
-    // Elements
-    const circles = [document.getElementById('c1'), document.getElementById('c2'), document.getElementById('c3'), document.getElementById('c4')];
-	const nums = [document.getElementById('num1'), document.getElementById('num2'), document.getElementById('num3'), document.getElementById('num4')];
-    const sizes = [document.getElementById('size1'), document.getElementById('size2'), document.getElementById('size3'), document.getElementById('size4')];
-    const ops = [document.getElementById('op1'), document.getElementById('op2'), document.getElementById('op3'), document.getElementById('op4')];
+(function(){
+  var circles=[
+    {n:"Red",c:"#ff3b30",d:200,o:100},
+    {n:"Green",c:"#34c759",d:150,o:100},
+    {n:"Blue",c:"#2f7bff",d:100,o:100},
+    {n:"Yellow",c:"#ffd60a",d:15,o:100}
+  ];
+  var MIN=1;
+  var stage=document.getElementById("stage"),panel=document.getElementById("panel");
+  function maxD(){return Math.max(100,Math.round(Math.max(window.innerWidth,window.innerHeight)*1.2));}
+  function clamp(v,a,b){v=parseFloat(v);if(isNaN(v))v=a;return Math.min(b,Math.max(a,v));}
 
-    startBtn.addEventListener('click', () => {
-        // Request back camera (environment)
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-            .then(stream => {
-                video.srcObject = stream;
-                startBtn.style.display = 'none';
-            })
-            .catch(err => alert('Camera Error: ' + err));
-    });
+  circles.forEach(function(k,i){
+    k.el=document.createElement("div");k.el.className="ring";k.el.style.borderColor=k.c;
+    stage.appendChild(k.el);
+    var row=document.createElement("div");row.className="row";row.style.setProperty("--c",k.c);
+    row.innerHTML='<div class="dot" style="background:'+k.c+'"></div>'+
+      '<div class="ctl"><span>Size</span><input type="range" class="ds" min="'+MIN+'" step="1"><input type="number" class="dn" min="'+MIN+'" step="1" inputmode="numeric" aria-label="'+k.n+' diameter in pixels"></div>'+
+      '<div class="ctl"><span>Haze</span><input type="range" class="os" min="0" max="100" step="1"><input type="number" class="on" min="0" max="100" step="1" inputmode="numeric" aria-label="'+k.n+' opacity percent"></div>';
+    panel.appendChild(row);
+    k.ds=row.querySelector(".ds");k.dn=row.querySelector(".dn");
+    k.os=row.querySelector(".os");k.on=row.querySelector(".on");
+    function setD(v){k.d=clamp(v,MIN,100000);render(k);}
+    function setO(v){k.o=clamp(v,0,100);render(k);}
+    k.ds.addEventListener("input",function(){setD(k.ds.value);});
+    k.dn.addEventListener("input",function(){if(k.dn.value!=="")setD(k.dn.value);});
+    k.dn.addEventListener("change",function(){setD(k.dn.value);});
+    k.os.addEventListener("input",function(){setO(k.os.value);});
+    k.on.addEventListener("input",function(){if(k.on.value!=="")setO(k.on.value);});
+    k.on.addEventListener("change",function(){setO(k.on.value);});
+  });
 
-	function updateNums() {
-		nums.forEach((num,i) => {
-			nums[i].value = sizes[i].value;
-        });
-		updateOverlay();
-	}
-	
-	function updateSizes() {
-		sizes.forEach((size,i) => {
-			sizes[i].value = nums[i].value;
-        });
-		updateOverlay();
-	}
-	
-    function updateOverlay() {
-        circles.forEach((circle,i) => {
-            const val = nums[i].value + 'px';
-            const opacity = ops[i].value;
-            circle.style.width = val;
-            circle.style.height = val;
-            circle.style.opacity = opacity;
-        });
+  function render(k){
+    k.el.style.width=k.d+"px";k.el.style.height=k.d+"px";k.el.style.opacity=k.o/100;
+    k.ds.max=Math.max(maxD(),k.d);
+    if(document.activeElement!==k.ds)k.ds.value=k.d;else k.ds.value=k.d;
+    if(document.activeElement!==k.dn)k.dn.value=k.d;
+    k.os.value=k.o;
+    if(document.activeElement!==k.on)k.on.value=k.o;
+  }
+  function renderAll(){circles.forEach(render);}
+  window.addEventListener("resize",renderAll);
+  window.addEventListener("orientationchange",function(){setTimeout(renderAll,150);});
+  renderAll();
+
+  var v=document.getElementById("v"),btn=document.getElementById("cam"),hint=document.getElementById("hint"),stream=null;
+  btn.addEventListener("click",function(){
+    if(stream){
+      stream.getTracks().forEach(function(t){t.stop();});stream=null;v.srcObject=null;v.style.display="none";
+      hint.style.display="";hint.innerHTML="Camera stopped. Tap “Start camera” to resume.";btn.textContent="Start camera";return;
     }
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      hint.style.display="";hint.textContent="This browser can’t access the camera here. Open the page over HTTPS in Safari or Chrome.";return;
+    }
+    navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false}).then(function(s){
+      stream=s;v.srcObject=s;v.style.display="block";v.play&&v.play();hint.style.display="none";btn.textContent="Stop camera";
+    }).catch(function(e){
+      hint.style.display="";
+      hint.textContent=(e&&e.name==="NotAllowedError")
+        ?"Camera permission was blocked. Allow camera access for this site in your browser settings, then try again."
+        :"Couldn’t start the camera ("+(e&&e.name||"error")+"). If this page is embedded, open it in its own browser tab.";
+    });
+  });
 
-    // Add event listeners to sliders
-    nums.forEach(lnum => {
-        lnum.addEventListener('input', updateSizes);
-    });
-	sizes.forEach(lsize => {
-        lsize.addEventListener('input', updateNums);
-    });
-	ops.forEach(lop => {
-        lop.addEventListener('input', updateOverlay);
-    });
-
-    // Initial positioning
-    // updateOverlay();
+  var tog=document.getElementById("tog");
+  tog.addEventListener("click",function(){
+    var h=panel.classList.toggle("hidden");tog.textContent=h?"Show controls":"Hide controls";
+  });
+})();
 </script>
-
 </body>
 </html>
