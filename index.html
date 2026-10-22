@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Collimator</title>
+<title>Camera Rings</title>
 <style>
 :root{--bg:#14171a;--panel:rgba(20,23,26,.88);--ink:#f2f4f5;--muted:#9aa4ab;--line:#2e353a;--accent:#f2f4f5;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -16,17 +16,21 @@ video{position:absolute;left:50%;top:50%;min-width:100%;min-height:100%;width:10
 .ring{position:absolute;left:50%;top:50%;border-radius:50%;border-style:solid;border-width:4px;transform:translate(-50%,-50%);pointer-events:none}
 #hint{position:absolute;left:50%;top:38%;transform:translateX(-50%);text-align:center;color:var(--muted);font-size:14px;max-width:80%;pointer-events:none}
 #bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
-#panel{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 14px;max-height:46dvh;overflow-y:auto;max-width:720px;margin:0 auto}
-#panel.hidden{display:none}
-.top{display:flex;gap:8px;justify-content:center;padding:8px;max-width:720px;margin:0 auto}
-button{font:inherit;font-weight:600;color:#111;background:var(--accent);border:0;border-radius:999px;padding:10px 18px;cursor:pointer}
+.pn{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:6px 14px;max-height:34dvh;overflow-y:auto;max-width:720px;margin:0 auto}
+.pn.hidden{display:none}
+#topbar{position:fixed;left:0;right:0;top:0;z-index:5;padding-top:env(safe-area-inset-top,0px)}
+#panelTop{border-top:0;border-bottom:1px solid var(--line)}
+#toast{display:none;position:fixed;left:50%;top:45%;transform:translateX(-50%);z-index:6;max-width:80%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;text-align:center;pointer-events:none}
+.top{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;max-width:720px;margin:0 auto}
+button{font:inherit;font-weight:600;color:#111;background:var(--accent);border:0;border-radius:999px;padding:10px 14px;cursor:pointer}
 button.alt{background:transparent;color:var(--ink);border:1px solid var(--line);background:var(--panel)}
 .row{display:grid;grid-template-columns:14px 1fr;gap:4px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:0}
 .dot{width:14px;height:14px;border-radius:50%}
-.ctl{display:grid;grid-template-columns:62px 1fr 74px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.ctl{display:grid;grid-template-columns:74px 1fr 74px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
 .ctl+.ctl{margin-top:4px}
-.row .dot{grid-row:span 2}
+.row .dot{grid-row:span 3}
+
 input[type=range]{width:100%;min-width:0;accent-color:var(--c)}
 input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px;font:inherit;font-size:14px}
 </style>
@@ -36,12 +40,16 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
   <video id="v" autoplay playsinline muted></video>
   <div id="hint">Tap “Start camera” to begin.<br>The rings stay centered on your screen in any orientation.</div>
 </div>
+<div id="topbar"><div id="panelTop" class="pn"></div></div>
+<div id="toast"></div>
 <div id="bar">
   <div class="top">
     <button id="cam">Start camera</button>
     <button id="tog" class="alt">Hide controls</button>
+    <button id="rst" class="alt">Reset controls</button>
+    <button id="fs" class="alt">Full screen</button>
   </div>
-  <div id="panel"></div>
+  <div id="panel" class="pn"></div>
 </div>
 <script>
 (function(){
@@ -51,8 +59,8 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
     {n:"Blue",c:"#2f7bff",d:100,o:100},
     {n:"Yellow",c:"#ffd60a",d:15,o:100}
   ];
-  var MIN=1;
-  var stage=document.getElementById("stage"),panel=document.getElementById("panel");
+  var MIN=10;
+  var stage=document.getElementById("stage"),panel=document.getElementById("panel"),panelTop=document.getElementById("panelTop");
   function maxD(){return Math.max(100,Math.round(Math.max(window.innerWidth,window.innerHeight)*1.2));}
   function clamp(v,a,b){v=parseFloat(v);if(isNaN(v))v=a;return Math.min(b,Math.max(a,v));}
 
@@ -62,10 +70,16 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
     var row=document.createElement("div");row.className="row";row.style.setProperty("--c",k.c);
     row.innerHTML='<div class="dot" style="background:'+k.c+'"></div>'+
       '<div class="ctl"><span>Size</span><input type="range" class="ds" min="'+MIN+'" step="1"><input type="number" class="dn" min="'+MIN+'" step="1" inputmode="numeric" aria-label="'+k.n+' diameter in pixels"></div>'+
-      '<div class="ctl"><span>Haze</span><input type="range" class="os" min="0" max="100" step="1"><input type="number" class="on" min="0" max="100" step="1" inputmode="numeric" aria-label="'+k.n+' opacity percent"></div>';
-    panel.appendChild(row);
+      '<div class="ctl"><span>Haze</span><input type="range" class="os" min="0" max="100" step="1"><input type="number" class="on" min="0" max="100" step="1" inputmode="numeric" aria-label="'+k.n+' haze percent"></div>'+
+      '<div class="ctl"><span>Thickness</span><input type="range" class="ts" min="1" max="3" step="1"><input type="number" class="tn" min="1" max="3" step="1" inputmode="numeric" aria-label="'+k.n+' thickness setting 1 to 3"></div>';
+    (i<2?panelTop:panel).appendChild(row);
     k.ds=row.querySelector(".ds");k.dn=row.querySelector(".dn");
     k.os=row.querySelector(".os");k.on=row.querySelector(".on");
+    k.ts=row.querySelector(".ts");k.tn=row.querySelector(".tn");k.d0=k.d;k.o0=k.o;k.t=2;
+    function setT(v){k.t=Math.round(clamp(v,1,3));render(k);}
+    k.ts.addEventListener("input",function(){setT(k.ts.value);});
+    k.tn.addEventListener("input",function(){if(k.tn.value!=="")setT(k.tn.value);});
+    k.tn.addEventListener("change",function(){setT(k.tn.value);k.tn.value=k.t;});
     function setD(v){k.d=clamp(v,MIN,100000);render(k);}
     function setO(v){k.o=clamp(v,0,100);render(k);}
     k.ds.addEventListener("input",function(){setD(k.ds.value);});
@@ -77,6 +91,7 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
   });
 
   function render(k){
+    k.el.style.borderWidth=(k.t*2)+"px";k.ts.value=k.t;if(document.activeElement!==k.tn)k.tn.value=k.t;
     k.el.style.width=k.d+"px";k.el.style.height=k.d+"px";k.el.style.opacity=k.o/100;
     k.ds.max=Math.max(maxD(),k.d);
     if(document.activeElement!==k.ds)k.ds.value=k.d;else k.ds.value=k.d;
@@ -108,9 +123,26 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
     });
   });
 
+  document.getElementById("rst").addEventListener("click",function(){
+    circles.forEach(function(k){k.d=k.d0;k.o=k.o0;k.t=2;render(k);});
+  });
+  var fsb=document.getElementById("fs"),toast=document.getElementById("toast"),tt;
+  function say(m){toast.textContent=m;toast.style.display="block";clearTimeout(tt);tt=setTimeout(function(){toast.style.display="none";},4500);}
+  function fsEl(){return document.fullscreenElement||document.webkitFullscreenElement;}
+  fsb.addEventListener("click",function(){
+    var d=document.documentElement;
+    if(fsEl()){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return;}
+    var req=d.requestFullscreen||d.webkitRequestFullscreen;
+    if(!req){say("Full screen isn’t available in this browser. On iPhone, use Share, then Add to Home Screen, to open it without browser bars.");return;}
+    function blocked(){say("Full screen was blocked. Open the page in its own browser tab and try again.");}
+    try{var p=req.call(d);if(p&&p.catch)p.catch(blocked);}catch(e){blocked();}
+  });
+  function fsUpdate(){fsb.textContent=fsEl()?"Exit full screen":"Full screen";setTimeout(renderAll,150);}
+  document.addEventListener("fullscreenchange",fsUpdate);
+  document.addEventListener("webkitfullscreenchange",fsUpdate);
   var tog=document.getElementById("tog");
   tog.addEventListener("click",function(){
-    var h=panel.classList.toggle("hidden");tog.textContent=h?"Show controls":"Hide controls";
+    var h=panel.classList.toggle("hidden");panelTop.classList.toggle("hidden",h);tog.textContent=h?"Show controls":"Hide controls";
   });
 })();
 </script>
