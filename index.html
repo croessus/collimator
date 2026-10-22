@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Camera Rings</title>
+<title>Collimator</title>
 <style>
 :root{--bg:#14171a;--panel:rgba(20,23,26,.88);--ink:#f2f4f5;--muted:#9aa4ab;--line:#2e353a;--accent:#f2f4f5;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -13,24 +13,19 @@
 html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;overflow:hidden}
 #stage{position:fixed;inset:0;overflow:hidden;background:#0b0d0e}
 video{position:absolute;left:50%;top:50%;min-width:100%;min-height:100%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);display:none}
-.ring{position:absolute;left:50%;top:50%;border-radius:50%;border-style:solid;border-width:4px;transform:translate(-50%,-50%);pointer-events:none}
+.ring{position:absolute;left:50%;top:50%;border-radius:50%;border-style:solid;transform:translate(-50%,-50%);pointer-events:none}
 #hint{position:absolute;left:50%;top:38%;transform:translateX(-50%);text-align:center;color:var(--muted);font-size:14px;max-width:80%;pointer-events:none}
-#bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
-.pn{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:6px 14px;max-height:34dvh;overflow-y:auto;max-width:720px;margin:0 auto}
-.pn.hidden{display:none}
-#topbar{position:fixed;left:0;right:0;top:0;z-index:5;padding-top:env(safe-area-inset-top,0px)}
-#panelTop{border-top:0;border-bottom:1px solid var(--line)}
 #toast{display:none;position:fixed;left:50%;top:45%;transform:translateX(-50%);z-index:6;max-width:80%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;text-align:center;pointer-events:none}
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
 .top{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;max-width:720px;margin:0 auto}
 button{font:inherit;font-weight:600;color:#111;background:var(--accent);border:0;border-radius:999px;padding:10px 14px;cursor:pointer}
-button.alt{background:transparent;color:var(--ink);border:1px solid var(--line);background:var(--panel)}
-.row{display:grid;grid-template-columns:14px 1fr;gap:4px 10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
-.row:last-child{border-bottom:0}
-.dot{width:14px;height:14px;border-radius:50%}
-.ctl{display:grid;grid-template-columns:74px 1fr 74px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
-.ctl+.ctl{margin-top:4px}
-.row .dot{grid-row:span 3}
-
+button.alt{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+#panel{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 14px;max-height:44dvh;overflow-y:auto;max-width:720px;margin:0 auto}
+#panel.hidden{display:none}
+#sw{display:flex;gap:14px;justify-content:center;padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+button.sw{width:40px;height:40px;padding:0;border-radius:50%;border:2px solid transparent}
+button.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
+.ctl{display:grid;grid-template-columns:74px 1fr 74px;gap:8px;align-items:center;font-size:13px;color:var(--muted);padding:5px 0}
 input[type=range]{width:100%;min-width:0;accent-color:var(--c)}
 input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px;font:inherit;font-size:14px}
 </style>
@@ -38,9 +33,8 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
 <body>
 <div id="stage">
   <video id="v" autoplay playsinline muted></video>
-  <div id="hint">Tap “Start camera” to begin.<br>The rings stay centered on your screen in any orientation.</div>
+  <div id="hint">Tap “Start camera” to begin.</div>
 </div>
-<div id="topbar"><div id="panelTop" class="pn"></div></div>
 <div id="toast"></div>
 <div id="bar">
   <div class="top">
@@ -49,7 +43,12 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
     <button id="rst" class="alt">Reset controls</button>
     <button id="fs" class="alt">Full screen</button>
   </div>
-  <div id="panel" class="pn"></div>
+  <div id="panel">
+    <div id="sw" role="group" aria-label="Choose circle"></div>
+    <div class="ctl"><span>Size</span><input type="range" id="ds" min="10" step="1"><input type="number" id="dn" min="10" step="1" inputmode="numeric" aria-label="Diameter in pixels"></div>
+    <div class="ctl"><span>Haze</span><input type="range" id="os" min="0" max="100" step="1"><input type="number" id="on" min="0" max="100" step="1" inputmode="numeric" aria-label="Haze percent"></div>
+    <div class="ctl"><span>Thickness</span><input type="range" id="ts" min="1" max="3" step="1"><input type="number" id="tn" min="1" max="3" step="1" inputmode="numeric" aria-label="Thickness setting 1 to 3"></div>
+  </div>
 </div>
 <script>
 (function(){
@@ -59,52 +58,55 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
     {n:"Blue",c:"#2f7bff",d:100,o:100},
     {n:"Yellow",c:"#ffd60a",d:15,o:100}
   ];
-  var MIN=10;
-  var stage=document.getElementById("stage"),panel=document.getElementById("panel"),panelTop=document.getElementById("panelTop");
+  var MIN=10,sel=0;
+  var stage=document.getElementById("stage"),panel=document.getElementById("panel"),sw=document.getElementById("sw");
+  function $(id){return document.getElementById(id);}
+  var ds=$("ds"),dn=$("dn"),os=$("os"),on=$("on"),ts=$("ts"),tn=$("tn");
   function maxD(){return Math.max(100,Math.round(Math.max(window.innerWidth,window.innerHeight)*1.2));}
   function clamp(v,a,b){v=parseFloat(v);if(isNaN(v))v=a;return Math.min(b,Math.max(a,v));}
 
   circles.forEach(function(k,i){
+    k.d0=k.d;k.o0=k.o;k.t=2;
     k.el=document.createElement("div");k.el.className="ring";k.el.style.borderColor=k.c;
     stage.appendChild(k.el);
-    var row=document.createElement("div");row.className="row";row.style.setProperty("--c",k.c);
-    row.innerHTML='<div class="dot" style="background:'+k.c+'"></div>'+
-      '<div class="ctl"><span>Size</span><input type="range" class="ds" min="'+MIN+'" step="1"><input type="number" class="dn" min="'+MIN+'" step="1" inputmode="numeric" aria-label="'+k.n+' diameter in pixels"></div>'+
-      '<div class="ctl"><span>Haze</span><input type="range" class="os" min="0" max="100" step="1"><input type="number" class="on" min="0" max="100" step="1" inputmode="numeric" aria-label="'+k.n+' haze percent"></div>'+
-      '<div class="ctl"><span>Thickness</span><input type="range" class="ts" min="1" max="3" step="1"><input type="number" class="tn" min="1" max="3" step="1" inputmode="numeric" aria-label="'+k.n+' thickness setting 1 to 3"></div>';
-    (i<2?panelTop:panel).appendChild(row);
-    k.ds=row.querySelector(".ds");k.dn=row.querySelector(".dn");
-    k.os=row.querySelector(".os");k.on=row.querySelector(".on");
-    k.ts=row.querySelector(".ts");k.tn=row.querySelector(".tn");k.d0=k.d;k.o0=k.o;k.t=2;
-    function setT(v){k.t=Math.round(clamp(v,1,3));render(k);}
-    k.ts.addEventListener("input",function(){setT(k.ts.value);});
-    k.tn.addEventListener("input",function(){if(k.tn.value!=="")setT(k.tn.value);});
-    k.tn.addEventListener("change",function(){setT(k.tn.value);k.tn.value=k.t;});
-    function setD(v){k.d=clamp(v,MIN,100000);render(k);}
-    function setO(v){k.o=clamp(v,0,100);render(k);}
-    k.ds.addEventListener("input",function(){setD(k.ds.value);});
-    k.dn.addEventListener("input",function(){if(k.dn.value!=="")setD(k.dn.value);});
-    k.dn.addEventListener("change",function(){setD(k.dn.value);});
-    k.os.addEventListener("input",function(){setO(k.os.value);});
-    k.on.addEventListener("input",function(){if(k.on.value!=="")setO(k.on.value);});
-    k.on.addEventListener("change",function(){setO(k.on.value);});
+    k.b=document.createElement("button");k.b.className="sw";k.b.style.background=k.c;
+    k.b.setAttribute("aria-label",k.n+" circle");
+    k.b.addEventListener("click",function(){sel=i;refresh();});
+    sw.appendChild(k.b);
   });
 
-  function render(k){
-    k.el.style.borderWidth=(k.t*2)+"px";k.ts.value=k.t;if(document.activeElement!==k.tn)k.tn.value=k.t;
-    k.el.style.width=k.d+"px";k.el.style.height=k.d+"px";k.el.style.opacity=k.o/100;
-    k.ds.max=Math.max(maxD(),k.d);
-    if(document.activeElement!==k.ds)k.ds.value=k.d;else k.ds.value=k.d;
-    if(document.activeElement!==k.dn)k.dn.value=k.d;
-    k.os.value=k.o;
-    if(document.activeElement!==k.on)k.on.value=k.o;
+  function drawRing(k){
+    k.el.style.width=k.d+"px";k.el.style.height=k.d+"px";
+    k.el.style.opacity=k.o/100;k.el.style.borderWidth=(k.t*2)+"px";
   }
-  function renderAll(){circles.forEach(render);}
-  window.addEventListener("resize",renderAll);
-  window.addEventListener("orientationchange",function(){setTimeout(renderAll,150);});
-  renderAll();
+  function refresh(){
+    var k=circles[sel];
+    circles.forEach(function(q,i){q.b.setAttribute("aria-pressed",i===sel?"true":"false");drawRing(q);});
+    panel.style.setProperty("--c",k.c);
+    ds.max=Math.max(maxD(),k.d);ds.value=k.d;
+    os.value=k.o;ts.value=k.t;
+    if(document.activeElement!==dn)dn.value=k.d;
+    if(document.activeElement!==on)on.value=k.o;
+    if(document.activeElement!==tn)tn.value=k.t;
+  }
+  function setD(v){circles[sel].d=clamp(v,MIN,100000);refresh();}
+  function setO(v){circles[sel].o=clamp(v,0,100);refresh();}
+  function setT(v){circles[sel].t=Math.round(clamp(v,1,3));refresh();}
+  ds.addEventListener("input",function(){setD(ds.value);});
+  dn.addEventListener("input",function(){if(dn.value!=="")setD(dn.value);});
+  dn.addEventListener("change",function(){setD(dn.value);dn.value=circles[sel].d;});
+  os.addEventListener("input",function(){setO(os.value);});
+  on.addEventListener("input",function(){if(on.value!=="")setO(on.value);});
+  on.addEventListener("change",function(){setO(on.value);on.value=circles[sel].o;});
+  ts.addEventListener("input",function(){setT(ts.value);});
+  tn.addEventListener("input",function(){if(tn.value!=="")setT(tn.value);});
+  tn.addEventListener("change",function(){setT(tn.value);tn.value=circles[sel].t;});
 
-  var v=document.getElementById("v"),btn=document.getElementById("cam"),hint=document.getElementById("hint"),stream=null;
+  window.addEventListener("resize",refresh);
+  window.addEventListener("orientationchange",function(){setTimeout(refresh,150);});
+  refresh();
+
+  var v=$("v"),btn=$("cam"),hint=$("hint"),stream=null;
   btn.addEventListener("click",function(){
     if(stream){
       stream.getTracks().forEach(function(t){t.stop();});stream=null;v.srcObject=null;v.style.display="none";
@@ -123,10 +125,11 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
     });
   });
 
-  document.getElementById("rst").addEventListener("click",function(){
-    circles.forEach(function(k){k.d=k.d0;k.o=k.o0;k.t=2;render(k);});
+  $("rst").addEventListener("click",function(){
+    circles.forEach(function(k){k.d=k.d0;k.o=k.o0;k.t=2;});refresh();
   });
-  var fsb=document.getElementById("fs"),toast=document.getElementById("toast"),tt;
+
+  var fsb=$("fs"),toast=$("toast"),tt;
   function say(m){toast.textContent=m;toast.style.display="block";clearTimeout(tt);tt=setTimeout(function(){toast.style.display="none";},4500);}
   function fsEl(){return document.fullscreenElement||document.webkitFullscreenElement;}
   fsb.addEventListener("click",function(){
@@ -137,12 +140,13 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
     function blocked(){say("Full screen was blocked. Open the page in its own browser tab and try again.");}
     try{var p=req.call(d);if(p&&p.catch)p.catch(blocked);}catch(e){blocked();}
   });
-  function fsUpdate(){fsb.textContent=fsEl()?"Exit full screen":"Full screen";setTimeout(renderAll,150);}
+  function fsUpdate(){fsb.textContent=fsEl()?"Exit full screen":"Full screen";setTimeout(refresh,150);}
   document.addEventListener("fullscreenchange",fsUpdate);
   document.addEventListener("webkitfullscreenchange",fsUpdate);
-  var tog=document.getElementById("tog");
+
+  var tog=$("tog");
   tog.addEventListener("click",function(){
-    var h=panel.classList.toggle("hidden");panelTop.classList.toggle("hidden",h);tog.textContent=h?"Show controls":"Hide controls";
+    var h=panel.classList.toggle("hidden");tog.textContent=h?"Show controls":"Hide controls";
   });
 })();
 </script>
