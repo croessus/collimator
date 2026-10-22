@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Collimator</title>
+<title>Camera Rings</title>
 <style>
 :root{--bg:#14171a;--panel:rgba(20,23,26,.88);--ink:#f2f4f5;--muted:#9aa4ab;--line:#2e353a;--accent:#f2f4f5;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -14,20 +14,22 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family
 #stage{position:fixed;inset:0;overflow:hidden;background:#0b0d0e}
 video{position:absolute;left:50%;top:50%;min-width:100%;min-height:100%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);display:none}
 .ring{position:absolute;left:50%;top:50%;border-radius:50%;border-style:solid;transform:translate(-50%,-50%);pointer-events:none}
-#hint{position:absolute;left:50%;top:38%;transform:translateX(-50%);text-align:center;color:var(--muted);font-size:14px;max-width:80%;pointer-events:none}
+#hint{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);text-align:center;color:var(--muted);font-size:14px;max-width:80%;pointer-events:none}
 #toast{display:none;position:fixed;left:50%;top:45%;transform:translateX(-50%);z-index:6;max-width:80%;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:14px;text-align:center;pointer-events:none}
 #bar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
-.top{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:8px;max-width:720px;margin:0 auto}
+.top{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:6px 14px 8px;max-width:720px;margin:0 auto;background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.top button{flex:1 1 auto;padding:8px 10px;font-size:13px}
+.nocircles .ring{display:none}
 button{font:inherit;font-weight:600;color:#111;background:var(--accent);border:0;border-radius:999px;padding:10px 14px;cursor:pointer}
 button.alt{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
-#panel{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 14px;max-height:44dvh;overflow-y:auto;max-width:720px;margin:0 auto}
+#panel{background:var(--panel);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:6px 14px;max-height:30dvh;overflow-y:auto;max-width:720px;margin:0 auto}
 #panel.hidden{display:none}
-#sw{display:flex;gap:14px;justify-content:center;padding-bottom:10px;margin-bottom:6px;border-bottom:1px solid var(--line)}
-button.sw{width:40px;height:40px;padding:0;border-radius:50%;border:2px solid transparent}
-button.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
-.ctl{display:grid;grid-template-columns:74px 1fr 74px;gap:8px;align-items:center;font-size:13px;color:var(--muted);padding:5px 0}
+#sw{display:flex;gap:14px;justify-content:center;padding-bottom:6px;margin-bottom:2px;border-bottom:1px solid var(--line)}
+button.sw{width:20px;height:20px;padding:0;border-radius:50%;border:2px solid transparent}
+button.sw[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--ink)}
+.ctl{display:grid;grid-template-columns:74px 1fr 74px;gap:6px;align-items:center;font-size:13px;color:var(--muted);padding:1px 0}
 input[type=range]{width:100%;min-width:0;accent-color:var(--c)}
-input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px;font:inherit;font-size:14px}
+input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 6px;font:inherit;font-size:13px}
 </style>
 </head>
 <body>
@@ -37,17 +39,18 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
 </div>
 <div id="toast"></div>
 <div id="bar">
-  <div class="top">
-    <button id="cam">Start camera</button>
-    <button id="tog" class="alt">Hide controls</button>
-    <button id="rst" class="alt">Reset controls</button>
-    <button id="fs" class="alt">Full screen</button>
-  </div>
   <div id="panel">
     <div id="sw" role="group" aria-label="Choose circle"></div>
     <div class="ctl"><span>Size</span><input type="range" id="ds" min="10" step="1"><input type="number" id="dn" min="10" step="1" inputmode="numeric" aria-label="Diameter in pixels"></div>
     <div class="ctl"><span>Haze</span><input type="range" id="os" min="0" max="100" step="1"><input type="number" id="on" min="0" max="100" step="1" inputmode="numeric" aria-label="Haze percent"></div>
     <div class="ctl"><span>Thickness</span><input type="range" id="ts" min="1" max="3" step="1"><input type="number" id="tn" min="1" max="3" step="1" inputmode="numeric" aria-label="Thickness setting 1 to 3"></div>
+  </div>
+  <div class="top">
+    <button id="cam">Start camera</button>
+    <button id="tog" class="alt">Hide controls</button>
+    <button id="hc" class="alt">Hide circles</button>
+    <button id="rst" class="alt">Reset controls</button>
+    <button id="fs" class="alt">Full screen</button>
   </div>
 </div>
 <script>
@@ -144,6 +147,8 @@ input[type=number]{width:74px;background:#0b0d0e;color:var(--ink);border:1px sol
   document.addEventListener("fullscreenchange",fsUpdate);
   document.addEventListener("webkitfullscreenchange",fsUpdate);
 
+  var hc=$("hc");
+  hc.addEventListener("click",function(){var h=stage.classList.toggle("nocircles");hc.textContent=h?"Show circles":"Hide circles";});
   var tog=$("tog");
   tog.addEventListener("click",function(){
     var h=panel.classList.toggle("hidden");tog.textContent=h?"Show controls":"Hide controls";
